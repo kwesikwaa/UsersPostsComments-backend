@@ -1,7 +1,10 @@
+import email
+from typing import Optional
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
-from sqlalchemy import Column, Integer, String, DateTime, create_engine, ForeignKey
-from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, ForeignKey,  Boolean
+from pydantic import BaseModel, Field
+import uuid
 
 from datetime import datetime
 import os
@@ -9,7 +12,7 @@ import os
 Base = declarative_base()
 postgres = os.getenv("POSTGRES")
 engine = create_engine(postgres, echo = False)
-session = sessionmaker(bind=engine)
+db = sessionmaker(bind=engine)
 
 class User(Base):
     __tablename__="users"
@@ -18,8 +21,9 @@ class User(Base):
     username = Column(String(24), nullable=False, unique=True)
     email = Column(String(36),nullable=False,unique=True)
     password = Column(String(100), nullable=False) 
-    avatar = Column(String(35),nullable=False, default = 'def_avatar.png') 
-    timestamp = Column(DateTime(), default=datetime.utcnow)  
+    avatar = Column(String(35),nullable=False, default = os.getenv("DEFAULT_AVATAR")) 
+    datecreated = Column(DateTime(), default=datetime.utcnow)  
+    isblackstarartist = Column(Boolean(),nullable=False, default=False)
     posts = relationship('Post', backref="artist", cascade="all, delete")
     comments = relationship('Comment', backref="artist", cascade="all, delete",)
     # r2p = relationship('Ireply', backref="artist", cascade="all, delete",)
@@ -28,19 +32,33 @@ class User(Base):
     def __repr__(self):
         return f"User({self.username}, {self.email})"
 
+class NewUser(BaseModel):
+    id: str = Field(default_factory=uuid.uuid4)
+    fullname: str = Field(...)
+    username: str = Field(...)
+    email: email = Field(...)
+    password: str = Field(...)
+    avatar: Optional[str]
+
+
+class UpdateUser(BaseModel):
+    fullname: Optional[str]
+    username: Optional[str]
+    avatar: Optional[str]
+
 
 class  Post(Base):
     __tablename__ = 'posts'
     id=Column(Integer(),primary_key=True)
-    content = Column(String(1000), nullable=False)
-    timestamp = Column(DateTime(),default=datetime.utcnow)
+    description = Column(String(1000), nullable=False)
+    datecreated = Column(DateTime(),default=datetime.utcnow)
     user_id = Column(Integer(), ForeignKey('users.id'), nullable=False )
     comments = relationship('Comment',backref="post",cascade="all, delete")
     likes = Column(Integer())
     # r2p = relationship('Ireply',backref="post",cascade="all, delete")
 
     def __repr__(self):
-        return f"Posts({self.content},{self.timestamp},{self.comments})"
+        return f"Posts({self.description},{self.datecreated},{self.comments})"
 
 
 class Comment(Base):
@@ -48,13 +66,17 @@ class Comment(Base):
 
     id = Column(Integer(), primary_key=True)
     comment = Column(String(150))
-    timestamp = Column(DateTime(),default=datetime.utcnow)
-    comment_reply_id = Column(Integer(), ForeignKey('comments.id'), nullable=True,)
-    reply_to_reply_id = Column(Integer(),  nullable=True,)
+    datecreated = Column(DateTime(),default=datetime.utcnow)
     post_id = Column(Integer(), ForeignKey('posts.id'),nullable=False)
     user_id = Column(Integer(), ForeignKey('users.id'),nullable=False)
+    comment_reply_id = Column(Integer(), ForeignKey('comments.id'), nullable=True,)
     replies = relationship('Comment', backref=backref('reply_to_comment', remote_side ='Comment.id'))
-    # rep2rep = relationship('Ireply',backref="rp2rp",cascade="all, delete")
+
+
+
+    # reply_to_reply_id = Column(Integer(),  nullable=True,)
+    
+    
 
     def __repr__(self):
         return f"Comments({self.comment}, replies({self.replies}))"

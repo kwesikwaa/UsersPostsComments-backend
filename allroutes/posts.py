@@ -3,4 +3,4 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 
-router = APIRouter()
+router = APIRouter(prefix="api/v1/posts")

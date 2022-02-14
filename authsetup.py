@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
+from operator import sub
 import os
+
 import time
 from dotenv import load_dotenv
 
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException
 from jose import jwt
 from passlib.context import CryptContext
@@ -32,18 +34,49 @@ class AuthSetup():
             return False
 
 
-    def createjwttoken(data: dict, expireduration: timedelta):
-        to_encode = data
-        expiry = datetime.now() + expireduration
-        to_encode.update({"exp": expiry})
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGO)
-        return {"access token" : encoded_jwt, "token_type" : "bearer"}
+    def createjwttoken(data: str, expireduration: timedelta):
+        payload={
+            "sub": data,
+            "exp": datetime.now() + expireduration,
+            "iat": datetime.now(),
+            "scope": "access_token",
+        }
+        encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGO)
+        return encoded_jwt
 
 
     def decodetoken(token: str):
         try:
             decodeam = jwt.decode(token, SECRET_KEY, algorithm=ALGO)
-            if(decodeam['exp'] >= time.time()):
-                return decodeam
-        except:
-            return HTTPException()
+            if(decodeam['scope'] == "access_token"):
+                return decodeam['sub']
+            raise HTTPException(status_code=401, detail='Invalid scope')
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail='Token has expired')
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code = 401, detail='Invalid token')
+
+    
+    def create_refreshtoken(data: str, expireduration: timedelta):
+        payload={
+            "sub": data,
+            "exp": datetime.now() + expireduration,
+            "iat": datetime.now(),
+            "scope": "refresh_token",
+        }
+        encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGO)
+        return encoded_jwt
+
+
+    def decode_refreshtoken(self, token:str):
+        try:
+            decodeam = jwt.decode(token, SECRET_KEY, algorithm=ALGO)
+            if(decodeam['scope'] == 'refresh_token'):
+                data = decodeam['sub']
+                new_token = self.createjwttoken(data)
+                return new_token
+            raise HTTPException(status_code=401, detail='Invalid scope for token')
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail='Refresh Token has expired')
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code = 401, detail='Invalid Refresh Token')

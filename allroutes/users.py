@@ -1,10 +1,11 @@
+from os import access
 from fastapi import APIRouter, Body, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List,Optional
 
 from ..databasesetup import User, NewUser, UpdateUser, db, Userdantic, UserLogin
-from ..authsetup import AuthSetup
+from  import AuthSetup
 
 
 router = APIRouter(prefix="api/v1/users")
@@ -17,7 +18,7 @@ async def getUsers():
 
 @router.get('/{username}',response_model=Userdantic,status_code=status.HTTP_200_OK)
 async def getUsers(username: str):
-    user = await db.query(User).filter_by(username == username).firs()
+    user = await db.query(User).filter_by(username == username).first()
     if(user):
         return user
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sorry, the user doesnt exist")
@@ -25,18 +26,28 @@ async def getUsers(username: str):
 
 @router.post('/signup')
 async def signup(user: NewUser):
-    # first run to check if username and email already exist.. if either do, the raise exception else create the user
-    # newu = User
-    # db.add(newu)
-    # db.commit()
-    # return AuthSetup.createjwttoken(user.username)
-    pass
+    if(db.query(User.filterby(User.username==user.username)).first() or db.query(User.filterby(User.email==user.email)).first()):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sorry this user already exists")
+    try:
+        new = User(username = user.username, password = AuthSetup.genpasswordhash(user.password))
+        db.add(new)
+        db.commit()
+        access_token = AuthSetup.createjwttoken(user.username)
+        refresh_token = AuthSetup.create_refreshtoken(user.username)
+        return {'access token':access_token, 'refresh token': refresh_token}
+    except:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error signing up")
+    
+    
 
 
-@router.post('/login')
+@router.post('/login', status_code=status.HTTP_200_OK)
 async def login(user: UserLogin):
-    if(AuthSetup.authenticateuser):
-        return AuthSetup.createjwttoken(user.username)
+    if(AuthSetup.authenticateuser(username=user.username,password=user.password)):
+        access_token = AuthSetup.createjwttoken(user.username)
+        refresh_token = AuthSetup.create_refreshtoken(user.username)
+        return {'access token':access_token, 'refresh token': refresh_token}
+
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
 

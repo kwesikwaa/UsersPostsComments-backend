@@ -1,14 +1,13 @@
-from os import access
 from fastapi import APIRouter, Body, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List,Optional
 
-from ..databasesetup import User, NewUser, UpdateUser, db, Userdantic, UserLogin
-from  import AuthSetup
+from databasesetup import User, NewUser, UpdateUser, db, Userdantic, UserLogin
+from authsetup import AuthSetup
 
 
-router = APIRouter(prefix="api/v1/users")
+router = APIRouter(prefix="/api/v1/users")
 
 @router.get('/',response_model=List[Userdantic],status_code=status.HTTP_200_OK)
 async def getUsers():
@@ -36,9 +35,7 @@ async def signup(user: NewUser):
         refresh_token = AuthSetup.create_refreshtoken(user.username)
         return {'access token':access_token, 'refresh token': refresh_token}
     except:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error signing up")
-    
-    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error signing up")  
 
 
 @router.post('/login', status_code=status.HTTP_200_OK)

@@ -51,6 +51,11 @@ class NewUser(BaseModel):
         orm_mode = True
 
 
+class UserLogin(BaseModel):
+    username: str = Field(...)
+    password: str = Field(...) 
+
+
 class UpdateUser(BaseModel):
     fullname: Optional[str]
     username: Optional[str]
@@ -77,8 +82,8 @@ class  Post(Base):
 
 
 class NewPost(BaseModel):
-    title: str
-    description: str
+    title: str = Field(...)
+    description: str = Field(...)
     # user_id:UUID
 
     class Config:
@@ -121,6 +126,9 @@ class Commentdantic(BaseModel):
     class Config:
         orm_mode = True
 
+
+class NewComment(BaseModel):
+    comment = str = Field(...)
 
 class Postdantic(BaseModel):
     id: str

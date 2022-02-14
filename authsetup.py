@@ -1,21 +1,23 @@
 from datetime import datetime, timedelta
 import os
+import time
 from dotenv import load_dotenv
 
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException
 from jose import jwt
-from numpy import deprecate
 from passlib.context import CryptContext
 
 from databasesetup import db, User
 
-class Authsetup():
-    
-    load_dotenv()
+load_dotenv()
 
-    SECRET = os.getenv("SECRET")
-    ALGO = os.getenv("ALGO")
+SECRET_KEY = os.getenv("SECRET")
+ALGO = os.getenv("ALGO")
 
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class AuthSetup():
 
     def genpasswordhash(password: str):
         return pwd_context.hash(password)
@@ -29,9 +31,19 @@ class Authsetup():
         except:
             return False
 
+
     def createjwttoken(data: dict, expireduration: timedelta):
         to_encode = data
         expiry = datetime.now() + expireduration
         to_encode.update({"exp": expiry})
-        encoded_jwt = jwt.encode(to_encode,SECRET,algorithm=ALGO)
-        return encoded_jwt
+        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGO)
+        return {"access token" : encoded_jwt, "token_type" : "bearer"}
+
+
+    def decodetoken(token: str):
+        try:
+            decodeam = jwt.decode(token, SECRET_KEY, algorithm=ALGO)
+            if(decodeam['exp'] >= time.time()):
+                return decodeam
+        except:
+            return HTTPException()

@@ -5,6 +5,10 @@ from allroutes.posts import router as postsrouter
 from allroutes.comments import router as commentsrouter
 from allroutes.users import router as usersrouter
 
+
+
+
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -13,6 +17,7 @@ app.add_middleware(
     allow_methods = ["*"],
     allow_headers = ["*"]
 )
+
 
 
 app.include_router(postsrouter.router)

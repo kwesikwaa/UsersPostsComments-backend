@@ -1,6 +1,5 @@
-import email
 from typing import Optional, List
-from sqlalchemy.dialects.postgresql import UUID
+# from sqlalchemy.dialects.postgresql import UUID
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, ForeignKey,  Boolean, null
@@ -13,14 +12,18 @@ from dotenv import load_dotenv
 
 Base = declarative_base()
 load_dotenv()
-postgres = os.getenv("XX")
+postgres = os.getenv("SQLITE")
 engine = create_engine(postgres, echo = True)
 Session = sessionmaker(bind=engine)
 db = Session(bind=engine)
 
+# USE THIS TO GENERATE UUID AND FEED INTO TABLE/SCHEMA InSTEAD OF sqlachemy's postgres uuid dialect
+def genuuidtostr():
+    return uuid.uuid4().hex
+
 class User(Base):
     __tablename__="users"
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(), primary_key=True, default=genuuidtostr)
     fullname = Column(String(24), nullable=False)
     username = Column(String(24), nullable=False, unique=True)
     email = Column(String(36),nullable=False,unique=True)
@@ -60,11 +63,11 @@ class UpdateUser(BaseModel):
 
 class  Post(Base):
     __tablename__ = 'posts'
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(), primary_key=True, default=genuuidtostr)
     title: Column(String(100), nullable=False)
     description = Column(String(1000), nullable=False)
     datecreated = Column(DateTime(),default=datetime.utcnow)
-    user_id = Column(UUID(), ForeignKey('users.id'), nullable=False )
+    user_id = Column(String(), ForeignKey('users.id'), nullable=False )
     comments = relationship('Comment',backref="post",cascade="all, delete")
     likes = Column(Integer())
     # r2p = relationship('Ireply',backref="post",cascade="all, delete")
@@ -76,7 +79,7 @@ class  Post(Base):
 class NewPost(BaseModel):
     title: str
     description: str
-    user_id:UUID
+    # user_id:UUID
 
     class Config:
         orm_mode=True
@@ -93,12 +96,12 @@ class UpdatePost(BaseModel):
 class Comment(Base):
     __tablename__ = 'comments'
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(), primary_key=True, default=genuuidtostr)
     comment = Column(String(150))
     datecreated = Column(DateTime(),default=datetime.utcnow)
-    post_id = Column(UUID(), ForeignKey('posts.id'),nullable=False)
-    user_id = Column(UUID(), ForeignKey('users.id'),nullable=False)
-    comment_reply_id = Column(UUID(), ForeignKey('comments.id'), nullable=True,)
+    post_id = Column(String(), ForeignKey('posts.id'),nullable=False)
+    user_id = Column(String(), ForeignKey('users.id'),nullable=False)
+    comment_reply_id = Column(String(), ForeignKey('comments.id'), nullable=True,)
     replies = relationship('Comment', backref=backref('reply_to_comment', remote_side ='Comment.id'))
 
     # reply_to_reply_id = Column(Integer(),  nullable=True,)
@@ -107,41 +110,41 @@ class Comment(Base):
 
 
 class Commentdantic(BaseModel):
-    id: UUID
+    id: str
     comment: str
-    datecreated: DateTime
+    datecreated: datetime
     replies: List[str]
-    post_id: UUID
-    user_id: UUID
-    comment_reply_id= UUID
+    post_id: str
+    user_id: str
+    comment_reply_id= str
 
     class Config:
         orm_mode = True
 
 
 class Postdantic(BaseModel):
-    id: UUID
+    id: str
     title: str
     description: str
-    datecreated: DateTime
+    datecreated: datetime
     likes: int
     comments: List[Commentdantic]
-    user_id: UUID
+    user_id: str
 
     class Config:
         orm_mode=True
 
 
 class Userdantic(BaseModel):
-    id: UUID
+    id: str
     fullname: str 
     username: str
     email: str
     avatar: str
-    datecreated: DateTime
+    datecreated: datetime
     isblackstarartist: bool
     posts: List[Postdantic]
-    # comments: List[]
+    comments: List[Commentdantic]
 
     class Config:
         orm_mode = True

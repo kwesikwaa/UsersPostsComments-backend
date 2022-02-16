@@ -7,12 +7,10 @@ from pydantic import BaseModel, Field
 import uuid
 
 from datetime import datetime
-import os
-from dotenv import load_dotenv
+from decouple import config
 
 Base = declarative_base()
-load_dotenv()
-postgres = os.getenv("SQLITE")
+postgres = config("SQLITE")
 engine = create_engine(postgres, echo = True)
 Session = sessionmaker(bind=engine)
 db = Session(bind=engine)
@@ -28,7 +26,7 @@ class User(Base):
     username = Column(String(24), nullable=False, unique=True)
     email = Column(String(36),nullable=False,unique=True)
     password = Column(String(100), nullable=False) 
-    avatar = Column(String(35),nullable=False, default = os.getenv("DEFAULT_AVATAR")) 
+    avatar = Column(String(35),nullable=False, default = config("DEFAULT_AVATAR")) 
     datecreated = Column(DateTime(), default=datetime.utcnow)  
     isblackstarartist = Column(Boolean(),nullable=False, default=False)
     posts = relationship('Post', backref="artist", cascade="all, delete")
@@ -128,7 +126,7 @@ class Commentdantic(BaseModel):
 
 
 class NewComment(BaseModel):
-    comment = str = Field(...)
+    comment : str = Field(...)
 
 class Postdantic(BaseModel):
     id: str

@@ -5,6 +5,7 @@ from typing import List,Optional
 
 from databasesetup import User, NewUser, UpdateUser, db, Userdantic, UserLogin
 from authsetup import AuthSetup
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 
 router = APIRouter(prefix="/api/v1/users")
@@ -48,6 +49,9 @@ async def login(user: UserLogin):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
 
-@router.put('/updatecredentials')
-async def update(user: UpdateUser):
-    pass
+# @router.put('/updatecredentials')
+# async def update(user: UpdateUser, credentials: HTTPAuthorizationCredentials = HTTPBearer()):
+#     token = credentials.credentials
+#     if(AuthSetup.decodetoken(token)):
+#         # MAKE THE NEEDED UPDATE
+#         pass

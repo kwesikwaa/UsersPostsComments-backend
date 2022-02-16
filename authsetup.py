@@ -1,21 +1,15 @@
 from datetime import datetime, timedelta
-from operator import sub
-import os
-
 import time
-from dotenv import load_dotenv
+from decouple import config
 
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException
-from jose import jwt
+import jwt
 from passlib.context import CryptContext
 
 from databasesetup import db, User
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET")
-ALGO = os.getenv("ALGO")
+SECRET_KEY = config("SECRET")
+ALGO = config("ALGO")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -25,9 +19,9 @@ class AuthSetup():
         return pwd_context.hash(password)
         
 
-    def authenticateuser(username:str, password: str):
+    async def authenticateuser(username:str, password: str):
         try:
-            user = db.query(User).filter_by(username = username).first()
+            user = await db.query(User).filter_by(username = username).first()
             pwd_check = pwd_context.verify(password, user['password'])
             return pwd_check
         except:

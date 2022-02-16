@@ -6,9 +6,6 @@ from allroutes.comments import router as commentsrouter
 from allroutes.users import router as usersrouter
 
 
-
-
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -19,10 +16,9 @@ app.add_middleware(
 )
 
 
-
-app.include_router(postsrouter.router)
-app.include_router(commentsrouter.router)
-app.include_router(usersrouter.router)
+app.include_router(postsrouter)
+app.include_router(commentsrouter)
+app.include_router(usersrouter)
 
 @app.get('/')
 def startpoint():

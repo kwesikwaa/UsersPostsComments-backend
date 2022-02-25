@@ -71,8 +71,10 @@ class  Post(Base):
     description = Column(String(1000), nullable=False)
     datecreated = Column(DateTime(),default=datetime.utcnow)
     user_id = Column(String(), ForeignKey('users.id'), nullable=False )
-    comments = relationship('Comment',backref="post",cascade="all, delete")
+    tags = Column(String())
+    softwaresused = Column(String())
     likes = Column(Integer())
+    comments = relationship('Comment',backref="post",cascade="all, delete")
     # r2p = relationship('Ireply',backref="post",cascade="all, delete")
 
     def __repr__(self):
@@ -104,10 +106,11 @@ class Comment(Base):
     datecreated = Column(DateTime(),default=datetime.utcnow)
     post_id = Column(String(), ForeignKey('posts.id'),nullable=False)
     user_id = Column(String(), ForeignKey('users.id'),nullable=False)
-    comment_reply_id = Column(String(), ForeignKey('comments.id'), nullable=True,)
+    isReply = Column(Boolean(),default=False,nullable=True)
+    # origcommentid = Column(String())    
+    reply_id = Column(String(), ForeignKey('comments.id'), nullable=True,)
     replies = relationship('Comment', backref=backref('reply_to_comment', remote_side ='Comment.id'))
 
-    # reply_to_reply_id = Column(Integer(),  nullable=True,)
     def __repr__(self):
         return f"Comments({self.comment}, replies({self.replies}))"
 
@@ -127,6 +130,10 @@ class Commentdantic(BaseModel):
 
 class NewComment(BaseModel):
     comment : str = Field(...)
+    post_id: str = Field(...)
+    user_id: str = Field(...)
+    isReply: str 
+
 
 class Postdantic(BaseModel):
     id: str

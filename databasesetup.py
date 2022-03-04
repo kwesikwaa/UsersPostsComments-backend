@@ -108,8 +108,10 @@ class Comment(Base):
     user_id = Column(String(), ForeignKey('users.id'),nullable=False)
     isReply = Column(Boolean(),default=False,nullable=True)
     # origcommentid = Column(String())    
-    reply_id = Column(String(), ForeignKey('comments.id'), nullable=True,)
-    replies = relationship('Comment', backref=backref('reply_to_comment', remote_side ='Comment.id'))
+    # replyid is which comment youre replying to
+    # PROBABLY WORK ON A USER MENTIONS LATER
+    parentcomment_id = Column(String(), ForeignKey('comments.id'), nullable=True,)
+    replies = relationship('Comment', backref=backref('parentcomment', remote_side ='Comment.id'))
 
     def __repr__(self):
         return f"Comments({self.comment}, replies({self.replies}))"
@@ -122,7 +124,7 @@ class Commentdantic(BaseModel):
     replies: List[str]
     post_id: str
     user_id: str
-    comment_reply_id= str
+    parentcomment_id: str
 
     class Config:
         orm_mode = True
@@ -133,6 +135,7 @@ class NewComment(BaseModel):
     post_id: str = Field(...)
     user_id: str = Field(...)
     isReply: str 
+    parentcomment_id= str
 
 
 class Postdantic(BaseModel):

@@ -1,8 +1,10 @@
+
 from typing import Optional, List
+
 # from sqlalchemy.dialects.postgresql import UUID
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, create_engine, ForeignKey,  Boolean, null
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, ForeignKey,  Boolean, null, ARRAY
 from pydantic import BaseModel, Field
 import uuid
 
@@ -10,10 +12,10 @@ from datetime import datetime
 from decouple import config
 
 Base = declarative_base()
-postgres = config("SQLITE")
+postgres = config("XX")
 engine = create_engine(postgres, echo = True)
 Session = sessionmaker(bind=engine)
-db = Session(bind=engine)
+db = Session()
 
 # USE THIS TO GENERATE UUID AND FEED INTO TABLE/SCHEMA InSTEAD OF sqlachemy's postgres uuid dialect
 def genuuidtostr():
@@ -26,11 +28,17 @@ class User(Base):
     username = Column(String(24), nullable=False, unique=True)
     email = Column(String(36),nullable=False,unique=True)
     password = Column(String(100), nullable=False) 
-    avatar = Column(String(35),nullable=False, default = config("DEFAULT_AVATAR")) 
+    phonenumber = Column(Integer(),nullable=False)
+    avatar = Column(String(35),nullable=True, default = config("DEFAULT_AVATAR")) 
+    isstudio = Column(Boolean(), nullable=False)
+    coverphoto = Column(String(35), nullable=True)
     datecreated = Column(DateTime(), default=datetime.utcnow)  
-    isblackstarartist = Column(Boolean(),nullable=False, default=False)
+    isblackstarartist = Column(Boolean(),nullable=True, default=False)
+    following = Column(ARRAY(String),nullable=True)
+    followers = Column(ARRAY(String),nullable=True)
     posts = relationship('Post', backref="artist", cascade="all, delete")
     comments = relationship('Comment', backref="artist", cascade="all, delete",)
+    
     # r2p = relationship('Ireply', backref="artist", cascade="all, delete",)
     # likes = Column(Integer())
     
@@ -44,6 +52,10 @@ class NewUser(BaseModel):
     password: str
     email: str
     avatar: Optional[str]
+    phonenumber: int
+    isstudio: bool
+    coverphoto: Optional[str]
+
 
     class Config:
         orm_mode = True
@@ -54,10 +66,20 @@ class UserLogin(BaseModel):
     password: str = Field(...) 
 
 
+class UserDisplay(BaseModel):
+    id: str
+    username: str
+    fullname: str
+    avatar: str
+    datecreated: str
+    isblackstarartist: bool
+
+
 class UpdateUser(BaseModel):
     fullname: Optional[str]
     username: Optional[str]
-    email: Optional[str]
+    isstudio: Optional[bool]
+    coverphoto: Optional[str]
     avatar: Optional[str]
 
     class Config:
@@ -71,19 +93,25 @@ class  Post(Base):
     description = Column(String(1000), nullable=False)
     datecreated = Column(DateTime(),default=datetime.utcnow)
     user_id = Column(String(), ForeignKey('users.id'), nullable=False )
-    tags = Column(String())
-    softwaresused = Column(String())
+    thumbnail = Column(String())
+    tags = Column(ARRAY(String),nullable=True)
+    media = Column(ARRAY(String),nullable=False)
+    softwaresused = Column(ARRAY(String),nullable=False)
     likes = Column(Integer())
     comments = relationship('Comment',backref="post",cascade="all, delete")
     # r2p = relationship('Ireply',backref="post",cascade="all, delete")
 
     def __repr__(self):
-        return f"Posts({self.description},{self.datecreated},{self.comments})"
+        return f"Posts({self.description},{self.thumbnail},{self.datecreated},{self.comments})"
 
 
 class NewPost(BaseModel):
     title: str = Field(...)
     description: str = Field(...)
+    thumbnail: str
+    tags: List[str]
+    media: List[str]
+    softwaresused: List[str]
     # user_id:UUID
 
     class Config:
@@ -93,6 +121,10 @@ class NewPost(BaseModel):
 class UpdatePost(BaseModel):
     title: Optional[str]
     description: Optional[str]
+    thumbnail: str
+    # tags: Optional[List[str]]
+    # media: Optional[List[str]]
+    # softwaresused: Optional[List[str]] 
 
     class Config:
         orm_mode=True
@@ -134,9 +166,15 @@ class NewComment(BaseModel):
     comment : str = Field(...)
     post_id: str = Field(...)
     user_id: str = Field(...)
-    isReply: str 
-    parentcomment_id= str
+    isReply: Optional[bool] 
+    parentcomment_id: Optional[str]
 
+    class Config:
+        orm_mode = True
+
+class UpdateComment(BaseModel):
+    comment: Optional[str]=None
+    
 
 class Postdantic(BaseModel):
     id: str
@@ -161,6 +199,10 @@ class Userdantic(BaseModel):
     isblackstarartist: bool
     posts: List[Postdantic]
     comments: List[Commentdantic]
+    followers: List[str]
+    following: List[str]
+    isstudio: bool
+    coverphoto: str
 
     class Config:
         orm_mode = True
@@ -169,3 +211,10 @@ class Userdantic(BaseModel):
 class Createdb():
     def createdb():
         Base.metadata.create_all(engine)
+
+def get_db():
+    dbb = Session()
+    try:
+        yield dbb
+    finally:
+        dbb.close()

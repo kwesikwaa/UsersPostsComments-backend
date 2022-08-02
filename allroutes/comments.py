@@ -13,7 +13,7 @@ async def comments(post: Postdantic):
 # PRETTY UNNECESSARY COS POSTS WILL POPULATE THEIROWN 
 
 
-@router.post('/newcomment', status_code=status.HTTP_201_CREATED, response_model= NewComment)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model= NewComment)
 async def newcomment(newcomment: NewComment, currentuser: UserDisplay= Depends(AuthSetup.getcurrentuser)):
     post = await db.query(Post).filter_by(id = newcomment.post_id).first()
 
@@ -29,14 +29,14 @@ async def newcomment(newcomment: NewComment, currentuser: UserDisplay= Depends(A
     # return HTTPException(status_code=status.HTTP_201_CREATED,detail="Comment created succcessfully")
 
 
-@router.put('/updatecomment/{id}', status_code=status.HTTP_202_ACCEPTED)
+@router.put('/{id}', status_code=status.HTTP_202_ACCEPTED)
 async def updatecomment(id: str, updatedcomment: UpdateComment, currentuser: UserDisplay= Depends(AuthSetup.getcurrentuser)):
     commenttodelete = db.query(Comment).filter_by(id=id).first()
     commenttodelete.comment = updatecomment
     db.commit()
     
 
-@router.delete('/deletecomment/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 async def deletecomment(id:str ,currentuser: UserDisplay= Depends(AuthSetup.getcurrentuser)):
     commenttodelete = db.query(Comment).filter_by(id=id).first()
     db.delete(commenttodelete)

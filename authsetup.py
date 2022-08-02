@@ -1,4 +1,3 @@
-from base64 import decode
 from datetime import datetime, timedelta
 from decouple import config
 from fastapi import Depends, HTTPException, APIRouter, status, Request, Form,Response
@@ -8,6 +7,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from databasesetup import db, User, UserDisplay
 from typing import Optional
+import secrets
+
 
 SECRET_KEY = config("SECRET")
 ALGO = config("ALGO")
@@ -61,6 +62,7 @@ class AuthSetup():
 
     async def authenticateuser(username:str, password: str):
             user = db.query(User).filter_by(username = username).first()
+            secrets.compare_digest()
             if not user:
                 return False
             if not pwd_context.verify(password, user.password):
